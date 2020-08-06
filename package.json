@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/FGRibreau/network-config",
   "dependencies": {
+    "detect-rpi": "^1.4.0",
     "lodash": ">=4.17.6",
     "when": "^3.7.2"
   },

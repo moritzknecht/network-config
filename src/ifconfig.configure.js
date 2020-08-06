@@ -2,6 +2,8 @@
 var _ = require('lodash');
 var assert = require('assert');
 var fs = require('fs');
+var isPi = require('detect-rpi');
+console.log('Running on Raspberry: ', isPi());
 
 module.exports = function (cp) {
   /**
@@ -13,6 +15,10 @@ module.exports = function (cp) {
   function configure(name, description, f) {
     assert(_.isString(name));
     assert(_.isPlainObject(description));
+
+    if (description.netmask) {
+      description.cidr = netmaskToCIDR(description.netmask);
+    }
 
     fs.readFile(configure.FILE, {
       encoding: 'utf8'
@@ -38,7 +44,7 @@ module.exports = function (cp) {
     });
   }
 
-  configure.FILE = '/etc/network/interfaces';
+  configure.FILE = isPi() ? '/etc/dhcpcd.conf' : '/etc/network/interfaces';
 
   return configure;
 };
@@ -63,14 +69,37 @@ function excludeInterface(name, content) {
     .join('\n\n').trim();
 }
 
-var formatDhcpConfig = _.template(function () {
+function netmaskToCIDR(mask) {
+  var maskNodes = mask.match(/(\d+)/g);
+  var cidr = 0;
+  for(var i in maskNodes)
+  {
+    cidr += (((maskNodes[i] >>> 0).toString(2)).match(/1/g) || []).length;
+  }
+  return cidr;
+}
+
+var formatDhcpConfig = isPi() ? _.template(function () {
+  /**
+auto <%= name %>
+iface <%= name %> inet dhcp
+*/
+}.toString().split('\n').slice(2, -2).join('\n')) : _.template(function () {
   /**
 auto <%= name %>
 iface <%= name %> inet dhcp
 */
 }.toString().split('\n').slice(2, -2).join('\n'));
 
-var formatConfig = _.template(function () {
+var formatConfig = isPi() ? _.template(function () {
+  /**
+interface <%= name %>
+    inform <%= ip %>/<%= cidr %>
+    netmask <%= netmask %>
+    static routers=<%= gateway %>
+    static domain_name_servers=<%= dns %>
+    */
+}.toString().split('\n').slice(2, -2).join('\n')) : _.template(function () {
   /**
 auto <%= name %>
 iface <%= name %> inet static
