@@ -81,8 +81,6 @@ function netmaskToCIDR(mask) {
 
 var formatDhcpConfig = isPi() ? _.template(function () {
   /**
-auto <%= name %>
-iface <%= name %> inet dhcp
 */
 }.toString().split('\n').slice(2, -2).join('\n')) : _.template(function () {
   /**
