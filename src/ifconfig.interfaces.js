@@ -3,7 +3,7 @@ var _ = require('lodash');
 
 var MAC = 'HWaddr';
 var INET = 'inet';
-var BCAST = 'Bcast';
+var BCAST = 'broadcast';
 var DESTINATIONS = ['default', 'link-local'];
 
 module.exports = function (cp) {
@@ -51,14 +51,14 @@ function parse(ifConfigOut, routeOut) {
       ip: getInterfaceIpAddr(lines[1]),
       netmask: getInterfaceNetmaskAddr(lines[1]),
       broadcast: getBroadcastAddr(lines[1]),
-      mac: getInterfaceMacAddr(_.first(lines)),
+//      mac: getInterfaceMacAddr(_.first(lines)),
       gateway: getGateway(routeOut)
     };
   });
 }
 
 function getInterfaceName(firstLine) {
-  return _.first(firstLine.split(' '));
+  return _.first(firstLine.split(' ')).replace(":", "");
 }
 
 /**
@@ -75,7 +75,6 @@ function getInterfaceMacAddr(firstLine) {
   if (!_.includes(firstLine, MAC)) {
     return null;
   }
-
   var macAddr = _.last(firstLine.split(MAC)).trim().replace(/-/g, ':');
 
   if (macAddr.split(':').length !== 6) {
@@ -98,7 +97,7 @@ function getInterfaceIpAddr(line) {
   if (!_.includes(line, INET)) {
     return null;
   }
-  return _.first(line.split(':')[1].split(' '));
+  return line.trim().split(' ')[1];
 }
 
 /**
@@ -114,7 +113,7 @@ function getInterfaceNetmaskAddr(line) {
   if (!_.includes(line, INET)) {
     return null;
   }
-  return _.last(line.split(':'));
+  return line.trim().split(' ')[4];
 }
 
 /**
@@ -129,13 +128,7 @@ function getBroadcastAddr(line) {
 
   // inet adr:1.1.1.77  Bcast:1.1.1.255  Masque:1.1.1.0
   // @todo oh boy. this is ugly.
-  return _.chain(line)
-    .split(BCAST)
-    .slice(1)
-    .first()
-    .value()
-    .substring(1)
-    .split(' ')[0];
+  return line.trim().split(" ")[7]
 }
 
 
@@ -154,6 +147,5 @@ function getGateway(stdout) {
       });
     })[0]
     .split(/\s+/)[1]
-    .split('.')[0]
     .replace(/-/g, '.');
 }
