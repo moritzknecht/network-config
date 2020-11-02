@@ -33,7 +33,7 @@ module.exports = function (cp) {
         }
 
         if (typeof description.restart == 'boolean'? description.restart : true) {
-          cp.exec('service networking reload', function (err, __, stderr) {
+          cp.exec('ip link set '+name+' down;ip link set '+name+' up', function (err, __, stderr) {
             f(err || stderr || null);
           });
         } else {
